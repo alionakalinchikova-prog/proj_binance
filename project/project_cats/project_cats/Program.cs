@@ -70,7 +70,7 @@ class Program
                     JsonElement root = doc.RootElement;
                     string price = root.GetProperty("price").GetString();
 
-                    Console.WriteLine($"{coinName}: {price} $");
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {coinName}: {price} $");
 
                     string fileName = $"{coinName}_{DateTime.Now:yyyy-MM-dd_HHmm}.json";
                     System.IO.File.WriteAllText(fileName, json);
