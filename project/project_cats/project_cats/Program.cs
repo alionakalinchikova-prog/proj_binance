@@ -23,36 +23,65 @@ class Program
             { "8", "DOT" }
         };
 
-        Console.WriteLine("Выбери монету:");
+        Console.WriteLine("Выбери монеты (введи номера через запятую, например: 1,3,5):");
         foreach (var coin in coins)
         {
             Console.WriteLine($"{coin.Key}. {coin.Value}");
         }
-        Console.Write("Введите номер (1-8): ");
-        string choice = Console.ReadLine();
+        Console.Write("\nТвой выбор: ");
+        string input = Console.ReadLine();
 
-        if (!coins.ContainsKey(choice))
+        string[] selectedNumbers = input.Split(',');
+        List<string> selectedCoins = new List<string>();
+
+        foreach (string num in selectedNumbers)
         {
-            Console.WriteLine("Неверный выбор!");
+            string trimmed = num.Trim();
+            if (coins.ContainsKey(trimmed))
+            {
+                selectedCoins.Add(coins[trimmed]);
+            }
+            else
+            {
+                Console.WriteLine($"Номер {trimmed} не найден, пропускаем");
+            }
+        }
+
+        if (selectedCoins.Count == 0)
+        {
+            Console.WriteLine("Не выбрано ни одной монеты!");
             return;
         }
 
-        string coinName = coins[choice];
-        string symbol = coinName + "USDT";
-
         using (HttpClient client = new HttpClient())
         {
-            string url = $"https://api.binance.com/api/v3/ticker/price?symbol={symbol}";
-            string json = await client.GetStringAsync(url);
-            using JsonDocument doc = JsonDocument.Parse(json);
-            JsonElement root = doc.RootElement;
-            string price = root.GetProperty("price").GetString();
+            Console.WriteLine("\n КУРСЫ:");
+            Console.WriteLine(new string('-', 40));
 
-            Console.WriteLine($"\n{coinName}: {price} $");
+            foreach (string coinName in selectedCoins)
+            {
+                string symbol = coinName + "USDT";
+                string url = $"https://api.binance.com/api/v3/ticker/price?symbol={symbol}";
 
-            string fileName = $"{coinName}_price_{DateTime.Now:yyyy-MM-dd_HHmm}.json";
-            System.IO.File.WriteAllText(fileName, json);
-            Console.WriteLine($"Сохранено в {fileName}");
+                try
+                {
+                    string json = await client.GetStringAsync(url);
+                    using JsonDocument doc = JsonDocument.Parse(json);
+                    JsonElement root = doc.RootElement;
+                    string price = root.GetProperty("price").GetString();
+
+                    Console.WriteLine($"{coinName}: {price} $");
+
+                    string fileName = $"{coinName}_{DateTime.Now:yyyy-MM-dd_HHmm}.json";
+                    System.IO.File.WriteAllText(fileName, json);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($" {coinName}: ошибка - {ex.Message}");
+                }
+            }
+
+            Console.WriteLine($"\n Сохранено {selectedCoins.Count} файлов");
         }
     }
 }
