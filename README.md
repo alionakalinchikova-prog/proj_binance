@@ -8,5 +8,6 @@
 - Сохранение результатов в JSON-файл с отметкой времени
 
 ## Скриншоты
-<img width="423" height="123" alt="image" src="https://github.com/user-attachments/assets/fef420c0-cce0-4cdc-883a-67ad4b88b305" />
+<img width="593" height="406" alt="image" src="https://github.com/user-attachments/assets/660fccb6-efbe-4799-9a82-da5691879c84" />
+
 
