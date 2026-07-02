@@ -9,7 +9,7 @@ class Program
     static async Task Main()
     {
         Console.WriteLine("КУРСЫ КРИПТОВАЛЮТ (BINANCE)");
-        Console.WriteLine(new string('-', 40));
+        Console.WriteLine(new string('-', 50));
 
         var coins = new Dictionary<string, string>
         {
@@ -20,7 +20,8 @@ class Program
             { "5", "XRP" },
             { "6", "ADA" },
             { "7", "DOGE" },
-            { "8", "DOT" }
+            { "8", "DOT" },
+            { "9", "AVAX" }
         };
 
         Console.WriteLine("Выбери монеты (введи номера через запятую, например: 1,3,5):");
@@ -55,33 +56,47 @@ class Program
 
         using (HttpClient client = new HttpClient())
         {
-            Console.WriteLine("\n КУРСЫ:");
-            Console.WriteLine(new string('-', 40));
+            Console.WriteLine("\nКУРСЫ И СТАТИСТИКА:");
+            Console.WriteLine(new string('-', 50));
 
             foreach (string coinName in selectedCoins)
             {
                 string symbol = coinName + "USDT";
-                string url = $"https://api.binance.com/api/v3/ticker/price?symbol={symbol}";
 
-                try
+                string urlPrice = $"https://api.binance.com/api/v3/ticker/price?symbol={symbol}";
+                string jsonPrice = await client.GetStringAsync(urlPrice);
+                using JsonDocument docPrice = JsonDocument.Parse(jsonPrice);
+                string price = docPrice.RootElement.GetProperty("price").GetString();
+
+                string url24hr = $"https://api.binance.com/api/v3/ticker/24hr?symbol={symbol}";
+                string json24hr = await client.GetStringAsync(url24hr);
+                using JsonDocument doc24hr = JsonDocument.Parse(json24hr);
+                JsonElement root24 = doc24hr.RootElement;
+
+                string high = root24.GetProperty("highPrice").GetString();
+                string low = root24.GetProperty("lowPrice").GetString();
+                string change = root24.GetProperty("priceChangePercent").GetString();
+
+                Console.WriteLine($"\n{coinName}:");
+                Console.WriteLine($"  Цена: {price} $");
+                Console.WriteLine($"  Максимум за 24ч: {high} $");
+                Console.WriteLine($"  Минимум за 24ч: {low} $");
+                Console.WriteLine($"  Изменение за 24ч: {change} %");
+
+                var combined = new
                 {
-                    string json = await client.GetStringAsync(url);
-                    using JsonDocument doc = JsonDocument.Parse(json);
-                    JsonElement root = doc.RootElement;
-                    string price = root.GetProperty("price").GetString();
-
-                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {coinName}: {price} $");
-
-                    string fileName = $"{coinName}_{DateTime.Now:yyyy-MM-dd_HHmm}.json";
-                    System.IO.File.WriteAllText(fileName, json);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($" {coinName}: ошибка - {ex.Message}");
-                }
+                    coin = coinName,
+                    symbol = symbol,
+                    timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                    price = jsonPrice,
+                    stats24h = json24hr
+                };
+                string combinedJson = JsonSerializer.Serialize(combined, new JsonSerializerOptions { WriteIndented = true });
+                string fileName = $"{coinName}_{DateTime.Now:yyyyMMdd_HHmm}.json";
+                System.IO.File.WriteAllText(fileName, combinedJson);
             }
 
-            Console.WriteLine($"\n Сохранено {selectedCoins.Count} файлов");
+            Console.WriteLine($"\nСохранено {selectedCoins.Count} файлов");
         }
     }
 }
